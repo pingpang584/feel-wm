@@ -1,0 +1,91 @@
+# Legged Feel-WM on an Isaac Sim ANYmal corpus, DINOv3 features (train with --sim). Variants:
+#   feelwm       full model                                          (default)
+#   noprop       without proprioceptive input
+#   visual_only  no proprio input, no proprio / traversability heads
+# Train: python tools/train.py configs/legged_isaac.yaml --sim --variant feelwm
+
+default_variant: feelwm
+
+model:
+  context_len: 3
+  rollout_horizon: 8
+  n_patch: 256
+  d_vis: 768
+  d_prop: 128
+  d_action: 4
+  d_raw: 53
+  n_layers: 6
+  n_heads: 8
+  ffn_mult: 4
+  dropout: 0.1
+  use_proprio_input: true
+  use_proprio_feature_head: true
+  use_traversability_head: true
+  proprio_feature_dim: 5
+  traversability_input_mode: parallel
+  action_conditioning: film
+  gradient_checkpointing: true
+data:
+  isaac_root: ${DATA_ROOT}/isaac/sim_anymal_isaac/sequences/all
+  feat_version: anymal_isaac_dinov3_v1
+  norm_stats_path: data/norm_stats/legged_isaac_anymal_v1.json
+  heldout_substrings: [Asphalt1__cov_02, Bumpy1__cov_02, humji1__cov_04, humji2__cov_02, Hill3__cov_03,
+    Forest2__cov_04, Cobblestone1__cov_04, Crossroads3__cov_03, Hill4__fail_01]
+  context_len: 3
+  rollout_horizon: 8
+  active_proprio_channels: [roughness, angular_instability, slope_power, slip, cost_of_transport]
+  include_dt: true
+  train_strides: [1, 2, 5, 10]
+  stride_sampling: random
+  val_stride: 1
+  proprio_horizon_s: 4.0
+loss:
+  lambda_prop: 0.5
+  lambda_trav: 1.0
+  lambda_cos: 0.1
+  channel_names: [roughness, angular_instability, slope_power, slip, cost_of_transport]
+  proprio_weights: [1.0, 1.0, 1.0, 1.0, 1.0]
+curriculum:
+  enabled: false
+scheduled_sampling:
+  enabled: true
+  start_epoch: 5
+  end_epoch: 15
+  p_start: 1.0
+  p_end: 0.5
+  mask_granularity: sample
+training:
+  epochs: 20
+  batch_size: 64
+  gradient_accumulation_steps: 2
+  lr: 0.0006
+  lr_schedule: cosine
+  lr_warmup_epochs: 1
+  weight_decay: 0.05
+  grad_clip: 1.0
+  num_workers: 8
+  eval_num_workers: 4
+  dataloader_timeout_s: 1800
+  device: cuda
+  amp: true
+  amp_dtype: bfloat16
+  seed: 0
+  save_epoch_checkpoints: true
+  periodic_checkpoint_minutes: 30
+  checkpoint_path: ${OUTPUT_ROOT}/legged_isaac/${VARIANT}/checkpoint.pt
+  metrics_path: ${OUTPUT_ROOT}/legged_isaac/${VARIANT}/metrics.jsonl
+  per_sequence_dir: ${OUTPUT_ROOT}/legged_isaac/${VARIANT}/per_sequence
+
+variants:
+  feelwm: null
+  noprop:
+    model:
+      use_proprio_input: false
+  visual_only:
+    model:
+      use_proprio_input: false
+      use_proprio_feature_head: false
+      use_traversability_head: false
+    loss:
+      lambda_prop: 0.0
+      lambda_trav: 0.0

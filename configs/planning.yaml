@@ -1,0 +1,77 @@
+# Open-loop CEM planning settings. Variants:
+#   wheeled       TartanDrive models (tools/eval/openloop_cem.py)    (default)
+#   legged_tg_gt  TartanGround + GrandTour model (tools/eval/openloop_cem_legged.py)
+#   legged_isaac  Isaac ANYmal model (tools/eval/openloop_cem_legged.py)
+# wm_config / wm_variant / checkpoint name the world model each variant evaluates; override
+# them with --wm-config / --wm-variant / --checkpoint. The score is goal similarity minus
+# lambda_trav x traversability risk (lambda_ride is an ablation term; the ride_cost block
+# only parses when lambda_ride is 0).
+
+default_variant: wheeled
+
+wm_config: configs/tartandrive.yaml
+checkpoint: ${OUTPUT_ROOT}/tartandrive/td1/checkpoint_best.pt
+planning_horizon: 8
+ride_cost:
+  ride_channels: [roughness, angular_instability, slope_power]
+  weights: null
+  discount: 1.0
+score:
+  lambda_trav: 1.0
+  lambda_ride: 0.0
+cem:
+  n_candidates: 256
+  iterations: 4
+  elite_frac: 0.1
+  epsilon: 0.05
+eval:
+  proprio_horizon_s: 1.0
+  seed: 0
+
+variants:
+  wheeled:
+    cem:
+      init_sigma: 0.5
+    eval:
+      library_size: 64
+      max_queries: 200
+      goal_sim_epsilon: 0.02
+    wm_variant: td1
+  legged_tg_gt:
+    wm_config: configs/legged_tg_gt.yaml
+    checkpoint: ${OUTPUT_ROOT}/legged_tg_gt/feelwm/checkpoint_best.pt
+    dt_schedule: [4, 4, 4, 4, 4, 4, 4, 4]
+    query:
+      anchor_stride: 4
+      speed_floor_mps: 0.3
+      max_per_mission: 100
+      seed: 0
+    ride_cost:
+      ride_channels: [roughness, cost_of_transport]
+    score:
+      lambda_trav: 0.0
+      lambda_ride: 1.0
+    eval:
+      prior_samples: 2000
+      prior_speed_floor_mps: 0.0
+      n_random: 64
+  legged_isaac:
+    wm_config: configs/legged_isaac.yaml
+    checkpoint: ${OUTPUT_ROOT}/legged_isaac/feelwm/epoch_ckpts/epoch_17.pt
+    dt_schedule: [1, 1, 1, 1, 5, 5, 10, 10]
+    query:
+      anchor_stride: 4
+      speed_floor_mps: 0.3
+      max_per_mission: 100
+      seed: 0
+    ride_cost:
+      ride_channels: [roughness, cost_of_transport]
+    score:
+      lambda_trav: 0.0
+      lambda_ride: 1.0
+    eval:
+      proprio_horizon_s: 4.0
+      prior_samples: 2000
+      prior_speed_floor_mps: 0.0
+      n_random: 64
+    wm_variant: feelwm

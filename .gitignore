@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+runs/
+third_party/
+datasets/
+data/binary_labels/
+*.pt
+*.ckpt
+wandb/
+out/

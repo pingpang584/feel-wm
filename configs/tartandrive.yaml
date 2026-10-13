@@ -1,0 +1,125 @@
+# Feel-WM on TartanDrive (wheeled ATV). Variants:
+#   td1          trained on TartanDrive 1.0, cosine LR schedule, no traversability head
+#   td1_td2eval  the td1 model read on TartanDrive 2.0 (evaluation only; TD1 norm stats)
+#   td2          trained on TartanDrive 2.0, constant LR schedule   (default)
+#   td2_noprop   td2 without proprioceptive input (use_proprio_input: false)
+# Train: torchrun --nproc_per_node=8 tools/train.py configs/tartandrive.yaml --variant td2
+
+default_variant: td2
+
+model:
+  context_len: 3
+  rollout_horizon: 8
+  n_patch: 256
+  d_vis: 768
+  d_prop: 128
+  d_action: 4
+  d_raw: 14
+  n_layers: 6
+  n_heads: 8
+  ffn_mult: 4
+  dropout: 0.1
+  use_proprio_input: true
+  use_proprio_feature_head: true
+  use_traversability_head: true
+  proprio_feature_dim: 4
+  traversability_input_mode: parallel
+  action_conditioning: film
+  visual_encoder: dinov2
+  gradient_checkpointing: true
+data:
+  split: train
+  split_path: data/splits/v2.json
+  processed_root: ${DATA_ROOT}/tartandrive2_processed
+  binary_label_root: data/binary_labels/v2
+  feat_root: ${DATA_ROOT}/tartandrive2_processed_features
+  norm_stats_path: data/norm_stats/v2.json
+  feat_version: dinov2reg_v1
+  context_len: 3
+  rollout_horizon: 8
+  n_patch: 256
+  d_vis: 768
+  require_vis_context: true
+  require_vis_target: true
+  active_proprio_channels: [roughness, slip_ratio, angular_instability, slope_power]
+  include_dt: true
+  train_strides: [1, 2, 5, 10]
+  stride_sampling: random
+  val_stride: 1
+  proprio_horizon_s: 1.0
+  exclude_sequences: [sam_loop_2023-09-27-12-42-17, trash_2023-09-14-12-03-21]
+loss:
+  lambda_prop: 0.5
+  lambda_trav: 1.0
+  lambda_cos: 0.1
+  channel_names: [roughness, slip_ratio, angular_instability, slope_power]
+  proprio_weights: [1.0, 1.0, 1.0, 1.0]
+curriculum:
+  enabled: false
+scheduled_sampling:
+  enabled: true
+  start_epoch: 5
+  end_epoch: 15
+  p_start: 1.0
+  p_end: 0.5
+training:
+  epochs: 20
+  batch_size: 64
+  gradient_accumulation_steps: 1
+  lr: 0.0006
+  lr_warmup_epochs: 1
+  weight_decay: 0.05
+  grad_clip: 1.0
+  num_workers: 16
+  device: cuda
+  amp: true
+  amp_dtype: bfloat16
+  progress: true
+  seed: 0
+  test_eval_every_n_epochs: 2
+  save_epoch_checkpoints: true
+  checkpoint_path: ${OUTPUT_ROOT}/tartandrive/${VARIANT}/checkpoint.pt
+  resume_path: null
+  metrics_path: ${OUTPUT_ROOT}/tartandrive/${VARIANT}/metrics.jsonl
+  per_sequence_dir: ${OUTPUT_ROOT}/tartandrive/${VARIANT}/per_sequence
+
+variants:
+  td1:
+    model:
+      d_raw: 12
+      use_traversability_head: false
+    data:
+      split_path: data/splits/td1_v1.json
+      processed_root: ${DATA_ROOT}/tartandrive1_processed
+      binary_label_root: data/binary_labels/td1_v1
+      feat_root: ${DATA_ROOT}/tartandrive1_processed_features
+      norm_stats_path: data/norm_stats/td1_v1.json
+      window_columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13]
+      exclude_sequences: [20210829_heightmaps_2_20210829_25, 20210902_heightmaps_1_20210902_0, 20210902_heightmaps_3_20210902_78,
+        20210903_heightmaps_1_20210903_0, 20210903_heightmaps_1_20210903_17, 20210826_heightmaps_2_20210826_98,
+        20210826_heightmaps_2_20210826_99, 20210826_heightmaps_2_20210826_100, 20210826_heightmaps_2_20210826_101,
+        20210826_heightmaps_2_20210826_84]
+    loss:
+      lambda_trav: 0.0
+    training:
+      lr_schedule: cosine
+  td1_td2eval:
+    model:
+      d_raw: 12
+      use_traversability_head: false
+    data:
+      norm_stats_path: data/norm_stats/td1_v1.json
+      window_columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13]
+    loss:
+      lambda_trav: 0.0
+    training:
+      lr_schedule: cosine
+      checkpoint_path: ${OUTPUT_ROOT}/tartandrive/td1/checkpoint.pt
+      metrics_path: ${OUTPUT_ROOT}/tartandrive/td1/metrics.jsonl
+      per_sequence_dir: ${OUTPUT_ROOT}/tartandrive/td1/per_sequence
+    experiment:
+      name: td1_td2eval
+  td2: null
+  td2_noprop:
+    model:
+      use_proprio_input: false

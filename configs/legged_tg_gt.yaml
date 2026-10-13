@@ -1,0 +1,71 @@
+# Legged Feel-WM on TartanGround (sim) + GrandTour (real), both ANYmal-D.
+# Train: python tools/train.py configs/legged_tg_gt.yaml --legged
+
+model:
+  context_len: 3
+  rollout_horizon: 8
+  n_patch: 256
+  d_vis: 768
+  d_prop: 128
+  d_action: 4
+  d_raw: 53
+  n_layers: 6
+  n_heads: 8
+  ffn_mult: 4
+  dropout: 0.1
+  use_proprio_input: true
+  use_proprio_feature_head: true
+  use_traversability_head: false
+  proprio_feature_dim: 4
+  traversability_input_mode: parallel
+  action_conditioning: film
+  gradient_checkpointing: true
+data:
+  norm_stats_path_gt: data/norm_stats/legged_gt.json
+  norm_stats_path_tg: data/norm_stats/legged_tg.json
+  grandtour_root: ${DATA_ROOT}/grand_tour
+  tartanground_root: ${DATA_ROOT}/tartanground
+  feat_version_gt: gt_dinov2reg_v1
+  feat_version_tg: tg_dinov2reg_v1
+  context_len: 3
+  rollout_horizon: 8
+  active_proprio_channels: [roughness, angular_instability, slope_power, cost_of_transport]
+  include_dt: true
+  train_strides: [1, 2, 5, 10]
+  stride_sampling: random
+  val_stride: 1
+  proprio_horizon_s: 1.0
+  heldout_grandtour_missions: [2024-12-03-13-15-38, 2024-12-03-13-26-40, 2024-12-09-09-34-43, 2024-12-09-09-41-46,
+    2024-12-09-11-28-28, 2024-12-09-11-53-11]
+loss:
+  lambda_prop: 0.5
+  lambda_trav: 0.0
+  lambda_cos: 0.1
+  channel_names: [roughness, angular_instability, slope_power, cost_of_transport]
+  proprio_weights: [1.0, 1.0, 1.0, 1.0]
+curriculum:
+  enabled: false
+scheduled_sampling:
+  enabled: true
+  start_epoch: 5
+  end_epoch: 15
+  p_start: 1.0
+  p_end: 0.5
+training:
+  epochs: 20
+  batch_size: 64
+  lr: 0.0006
+  lr_schedule: cosine
+  lr_warmup_epochs: 1
+  weight_decay: 0.05
+  grad_clip: 1.0
+  num_workers: 16
+  eval_num_workers: 4
+  dataloader_timeout_s: 600
+  device: cuda
+  amp: true
+  amp_dtype: bfloat16
+  seed: 0
+  checkpoint_path: ${OUTPUT_ROOT}/legged_tg_gt/feelwm/checkpoint.pt
+  metrics_path: ${OUTPUT_ROOT}/legged_tg_gt/feelwm/metrics.jsonl
+  per_sequence_dir: ${OUTPUT_ROOT}/legged_tg_gt/feelwm/per_sequence

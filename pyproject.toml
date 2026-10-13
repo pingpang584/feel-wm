@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "feelwm"
+version = "0.1.0"
+description = "Feel-WM: a terrain-aware navigation world model that predicts visual and proprioceptive futures"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.4",
+    "numpy",
+    "pyyaml",
+    "tqdm",
+    "scipy",
+]
+
+[project.optional-dependencies]
+preprocess = ["rosbags", "opencv-python-headless", "pillow"]
+features = ["transformers", "pillow"]
+legged = ["zarr"]
+wandb = ["wandb"]
+test = ["pytest"]
+all = ["feelwm[preprocess,features,legged,wandb,test]"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["feelwm*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

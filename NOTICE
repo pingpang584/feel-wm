@@ -1,0 +1,10 @@
+Feel-WM is released under the MIT License (see LICENSE), with the following
+third-party component:
+
+- tools/legged/assets/anymal_c.urdf — ANYmal C robot description, Copyright 2020
+  ANYbotics, BSD 3-Clause License (see tools/legged/assets/LICENSE.anymal_c).
+
+Model weights used at run time are downloaded by the user and are NOT part of this
+repository; their own licenses apply:
+- facebook/dinov2-with-registers-base (Hugging Face model card),
+- facebook/dinov3-vitb16-pretrain-lvd1689m (DINOv3 License, gated on Hugging Face).
