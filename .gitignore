@@ -8,5 +8,6 @@ datasets/
 data/binary_labels/
 *.pt
 *.ckpt
+*.safetensors
 wandb/
 out/

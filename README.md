@@ -77,6 +77,18 @@ python tools/eval_offline.py configs/tartandrive.yaml \
 
 Open-loop CEM planning tools are in `tools/eval/` (usage in each file's docstring).
 
+## Pretrained weights
+
+The TartanDrive 1.0 model (Table I) is at
+[huggingface.co/pingpang584/feel-wm](https://huggingface.co/pingpang584/feel-wm):
+
+```bash
+pip install huggingface_hub
+hf download pingpang584/feel-wm --local-dir weights
+python tools/eval_offline.py configs/tartandrive.yaml weights/tartandrive1/model.safetensors \
+    --variant td1 --split val
+```
+
 ## License
 
 MIT. The vendored ANYmal-C URDF is BSD-3-Clause (ANYbotics); see `NOTICE`.

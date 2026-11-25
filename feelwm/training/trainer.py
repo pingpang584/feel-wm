@@ -23,6 +23,7 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm.auto import tqdm
 
+from feelwm.checkpoint import read_checkpoint
 from feelwm.config import add_variant_arg, load_config
 from feelwm.data.dataset import DatasetConfig, TartanDriveDataset
 from feelwm.data.normalize import (
@@ -1259,7 +1260,7 @@ class FullModelTrainer:
         os.replace(tmp_path, ckpt_path)
 
     def load_checkpoint(self, path: str) -> None:
-        ckpt = torch.load(path, map_location=self.device, weights_only=False)
+        ckpt = read_checkpoint(path, map_location=self.device)
         _unwrap_model(self.model).load_state_dict(ckpt["model_state"])
         # Slim per-epoch snapshots (save_epoch_checkpoints) carry only model_state +
         # next_epoch — enough for eval/recon. Skip optimizer/scaler restore when absent

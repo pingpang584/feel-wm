@@ -78,6 +78,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from feelwm.checkpoint import read_checkpoint  # noqa: E402
 from feelwm.config import add_variant_arg, load_config  # noqa: E402
 from feelwm.data.dataset import DatasetConfig, TartanDriveDataset  # noqa: E402
 from feelwm.models.terrain_wm import ModelConfig, TerrainWorldModel  # noqa: E402
@@ -152,7 +153,7 @@ def main() -> None:
 
     cfg = load_config(Path(args.config), args.variant)
     model = TerrainWorldModel(_mk(ModelConfig, cfg["model"])).to(args.device).eval()
-    model.load_state_dict(torch.load(args.checkpoint, map_location="cpu")["model_state"])
+    model.load_state_dict(read_checkpoint(args.checkpoint)["model_state"])
 
     overrides = {} if args.val_stride is None else {"val_stride": args.val_stride}
     if args.sim:

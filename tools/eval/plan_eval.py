@@ -32,6 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from feelwm.checkpoint import read_checkpoint
 from feelwm.config import add_variant_arg, load_config
 from feelwm.data.dataset import DatasetConfig, TartanDriveDataset
 from feelwm.data.normalize import NormStats
@@ -63,7 +64,7 @@ def _load_model(wm_cfg_path: Path, ckpt_path: Path, device: torch.device,
     cfg = load_config(wm_cfg_path, variant)
     model_cfg: ModelConfig = _dataclass_from_dict(ModelConfig, cfg["model"])
     model = TerrainWorldModel(model_cfg).to(device).eval()
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    ckpt = read_checkpoint(ckpt_path, map_location=device)
     model.load_state_dict(ckpt["model_state"])
     channel_names = list(cfg["loss"]["channel_names"])
     return model, model_cfg, channel_names, cfg

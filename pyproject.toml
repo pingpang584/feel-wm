@@ -15,6 +15,7 @@ dependencies = [
     "pyyaml",
     "tqdm",
     "scipy",
+    "safetensors",
 ]
 
 [project.optional-dependencies]
